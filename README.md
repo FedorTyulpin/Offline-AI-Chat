@@ -83,11 +83,10 @@ A desktop chat interface for interacting with DeepSeek AI models, featuring pers
 ```
 deepseek-chat/
 ├── meta/                # Chat storage
-│   └── chats/           # Individual chat histories
-├── AI.py                # DeepSeek integration
-├── metaGenerator.py     # Chat history management
-├── app.py               # Main application
-└── README.md
+│   └── chats/           # Individual chats
+├── AI.py                # DeepSeek
+├── metaGenerator.py     # Chat history
+├── main.py               # Main application
 ```
 
 ## Customization
