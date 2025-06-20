@@ -13,11 +13,7 @@ Simple chat with artificial intelligence, with the ability to create different c
 6. send button
 
 
-Here's a comprehensive README.md for your DeepSeek Chat application:
-
-
-
-
+---
 
 A desktop chat interface for interacting with DeepSeek AI models, featuring persistent chat history management and a clean GUI.
 
