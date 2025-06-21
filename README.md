@@ -1,6 +1,8 @@
 # Offline-AI-Chat
 Simple chat with artificial intelligence, with the ability to create different chats
 
+Смотрите [документацию](./README_ru.md) на русском
+
 ![window.png](meta/readme%20img/window.png)
 1. create chat
 2. rename chat (button)
@@ -82,3 +84,5 @@ deepseek-chat/
 ├── metaGenerator.py     # Chat history
 ├── main.py               # Main application (run only this (dowloaded ollama))
 ```
+
+README_ru.md
