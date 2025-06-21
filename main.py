@@ -1,5 +1,5 @@
 import os
-
+import threading
 import tkinter as tk
 from tkinter import *
 from tkinter import scrolledtext, messagebox, simpledialog
@@ -25,8 +25,6 @@ class AIchatAPP:
         self.root.minsize(800, 500)
         self.root.maxsize(1000,700)
 
-
-
         self.main_panel()
         self.side_panel()
 
@@ -44,7 +42,7 @@ class AIchatAPP:
         for chat_id in range(len(chats_list)):
             current_chat = chats_list[chat_id]  # Сохраняем значение для этой итерации
 
-            self.chats[current_chat] = AI.AI_chat("deepseek-r1:latest", current_chat, metaGenerator.load(current_chat))
+            self.chats[current_chat] = AI.AI_chat(current_chat, history= metaGenerator.load(current_chat))
 
             Button(
                 self.side,
@@ -176,29 +174,59 @@ class AIchatAPP:
                 elif text["role"] == "assistant":
                     self.chat_panel.insert(END, f"\n{text["content"]}\n", "ai")
 
+    def send_message(self, text):
 
 
-
-
-
-
-    def send_message(self,text):
-        self.send_btn["state"] = "disable"
+        self.is_thinking = True
+        self.send_btn["state"] = "disabled"
         self.user_entry.delete("1.0", END)
+        self.user_entry["state"] = "disabled"  # Блокируем ввод
+
 
         self.chat_panel["state"] = "normal"
-
         self.chat_panel.insert(END, f"\n{text}\n", "user")
 
-        ans = self.chats[self.chosen_chat].text_query(f"{text}")
-        self.chat_panel.delete(f"{len(self.chat_panel.get("1.0", tk.END).splitlines())}.0", END)
+        # Добавляем индикатор "Thinking..."
+        thinking_line = self.chat_panel.index(END)
+        self.chat_panel.insert(END, "\nThinking...\n", "thinking")
+        self.chat_panel.see(END)  # Прокручиваем к новому сообщению
+        self.chat_panel.update()  # Обновляем интерфейс
 
+        # Запускаем запрос в отдельном потоке
+        thread = threading.Thread(
+            target=self.get_ai_response,
+            args=(text, thinking_line),
+            daemon=True
+        )
+        thread.start()
+
+    def get_ai_response(self, text, thinking_line):
+        try:
+            ans = self.chats[self.chosen_chat].text_query(text)
+        except Exception as e:
+            ans = f"Error: {str(e)}"
+
+        # Обновляем GUI в основном потоке
+        self.root.after(0, self.update_chat, ans, thinking_line)
+
+    def update_chat(self, ans, thinking_line):
+        self.chat_panel["state"] = "normal"
+
+        # Удаляем индикатор "Thinking..."
+        self.chat_panel.delete(thinking_line, f"{thinking_line}+2l")
+
+        # Вставляем ответ
         self.chat_panel.insert(END, f"\n{ans}\n", "ai")
+        self.chat_panel.see(END)  # Прокручиваем к новому сообщению
+        self.chat_panel["state"] = "disabled"
 
-
-        self.chat_panel["state"] = "disable"
-        self.send_btn["state"] = "normal"
+        # Сохраняем историю
         metaGenerator.save(self.chosen_chat, self.chats[self.chosen_chat].history)
+
+        # Восстанавливаем интерфейс
+        self.user_entry["state"] = "normal"
+        self.send_btn["state"] = "normal"
+        self.is_thinking = False
 
 
 

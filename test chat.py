@@ -1,7 +1,7 @@
 import AI
 import metaGenerator
 
-chat1 = AI.AI_chat('deepseek-r1:latest',"test")
+chat1 = AI.AI_chat("test")
 
 def main():
     print("Ollama Chat (для выхода введите '0')")

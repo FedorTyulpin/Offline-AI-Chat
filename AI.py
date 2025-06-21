@@ -3,6 +3,10 @@ try:
     import ollama
     import tkinter as tk
     from tkinter import *
+    from tkinter import ttk
+    import threading
+    request_lock = threading.Lock()
+
 except ModuleNotFoundError as err:
     module = str(err).split("'")[1]
 
@@ -13,33 +17,62 @@ except ModuleNotFoundError as err:
 downloaded_modules = [x["model"] for x in ollama.list().models]
 
 
+if not [x for x in open("meta/model.txt")]:
+    modelTxt = open("meta/model.txt",mode="w+")
+    if len(downloaded_modules) == 1:
+        default_model = downloaded_modules[0]
+
+    elif len(downloaded_modules)>1:
+        root = Tk()
+        root.title("Выбрать модель")
+
+        ttk.Label(text="chose model that you want use:").grid()
+        com = ttk.Combobox(values=downloaded_modules,state='readonly')
+        com.grid()
+
+        accept_btn = ttk.Button(text= "accept", command=lambda : (modelTxt.write(com.get()),root.destroy()))
+        accept_btn.grid()
+        root.mainloop()
+
+    else:
+        raise ""
+    modelTxt.close()
+
+default_model = [x for x in open("meta/model.txt")][0]
+
+
 
 
 class AI_chat():
-    def __init__(self, model, label, history=None):
+    def __init__(self,  label, model=None, history=None):
+        if model is not None:
+            if model in downloaded_modules:
+                self.model = model
+        else:
+            self.model = default_model
 
-        if model in downloaded_modules:
-            self.model = model
-        else: exit(f"This model: \033[1m\033[34m{model}\033[0m is not installed. check if you have written the name correctly, if yes, then use the command '\033[34mollama run {model}\033[0m'")
         self.label = label
         self.history = [] if history is None else history
 
-    def text_query(self, text : str, is_thinking : bool =False) -> str:
-        # Добавляем сообщение в историю
-        self.history.append({"role": "user", "content": text})
+    def text_query(self, text: str, is_thinking: bool = False) -> str:
+        # Добавляем блокировку для безопасного доступа к истории
+        with request_lock:
+            self.history.append({"role": "user", "content": text})
 
-        # Формируем запрос с историей диалога
-        response = ollama.chat(
-            model=self.model,
-            messages=self.history,
-            stream=False,  # Для поточного вывода установите True
-            think= is_thinking
-        )
+            try:
+                response = ollama.chat(
+                    model=self.model,
+                    messages=self.history,
+                    stream=False,
+                    think=is_thinking
+                )
 
-        # Получаем ответ модели
-        ai_response = response['message']['content']
-        self.history.append({"role": "assistant", "content": ai_response})
-        return f"{ai_response}"
+                ai_response = response['message']['content']
+                self.history.append({"role": "assistant", "content": ai_response})
+                return f"{ai_response}"
+            except Exception as e:
+                # В случае ошибки возвращаем сообщение и не сохраняем в историю
+                return f"⚠️ Error: {str(e)}"
 
 
 
