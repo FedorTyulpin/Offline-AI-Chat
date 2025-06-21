@@ -55,7 +55,6 @@ class AI_chat():
         self.history = [] if history is None else history
 
     def text_query(self, text: str, is_thinking: bool = False) -> str:
-        # Добавляем блокировку для безопасного доступа к истории
         with request_lock:
             self.history.append({"role": "user", "content": text})
 
@@ -71,7 +70,6 @@ class AI_chat():
                 self.history.append({"role": "assistant", "content": ai_response})
                 return f"{ai_response}"
             except Exception as e:
-                # В случае ошибки возвращаем сообщение и не сохраняем в историю
                 return f"⚠️ Error: {str(e)}"
 
 

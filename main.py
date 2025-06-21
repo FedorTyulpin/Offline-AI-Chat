@@ -31,7 +31,7 @@ class AIchatAPP:
 
     def side_panel(self):
 
-        self.side = LabelFrame(self.root,text="Чаты")
+        self.side = LabelFrame(self.root,text="Chats")
         self.side.grid(row=0, column=0,ipadx=5, ipady=5,sticky=NS)
 
         new_chat_btn = Button(self.side, text="+ new chat",command=lambda : self.create_chat())
