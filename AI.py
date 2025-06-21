@@ -54,23 +54,31 @@ class AI_chat():
         self.label = label
         self.history = [] if history is None else history
 
-    def text_query(self, text: str, is_thinking: bool = False) -> str:
-        with request_lock:
-            self.history.append({"role": "user", "content": text})
+    def stream_query(self, text: str, callback, is_thinking):
+        """Потоковый запрос с callback для обновления в реальном времени"""
+        # Добавляем сообщение пользователя в историю
+        self.history.append({"role": "user", "content": text})
 
-            try:
-                response = ollama.chat(
-                    model=self.model,
-                    messages=self.history,
-                    stream=False,
-                    think=is_thinking
-                )
+        # Создаем потоковый запрос
+        stream = ollama.chat(
+            model=self.model,
+            messages=self.history,
+            think=None if is_thinking else False,
+            stream=True  # Включаем потоковый вывод
 
-                ai_response = response['message']['content']
-                self.history.append({"role": "assistant", "content": ai_response})
-                return f"{ai_response}"
-            except Exception as e:
-                return f"⚠️ Error: {str(e)}"
+        )
+
+        full_response = ""
+        for chunk in stream:
+            if 'message' in chunk and 'content' in chunk['message']:
+                content_chunk = chunk['message']['content']
+                full_response += content_chunk
+                # Вызываем callback для каждой новой части ответа
+                callback(content_chunk)
+
+        # Добавляем полный ответ в историю
+        self.history.append({"role": "assistant", "content": full_response})
+        return full_response
 
 
 
