@@ -1,4 +1,4 @@
-# Offline-AI-Chat (New wersion on `master` branch!!!)
+# Offline-AI-Chat (New version on `master` branch!!!)
 Simple chat with artificial intelligence, with the ability to create different chats
 
 
