@@ -2,6 +2,7 @@ import os
 import threading
 import tkinter as tk
 from pkgutil import walk_packages
+from selectors import SelectSelector
 from tkinter import *
 from tkinter import ttk
 from tkinter import scrolledtext, messagebox, simpledialog
@@ -29,7 +30,9 @@ class AIchatAPP:
         self.root.resizable(False, False)
         self.root.iconphoto(False, PhotoImage(file="meta/logo.png"))
         self.is_thinking  = IntVar()
-        self.thinking_text = None
+        self.thinking_text = False
+        self.bold_text_id = None
+        self.italic_text_id = None
 
         self.main_panel()
         self.side_panel()
@@ -170,7 +173,7 @@ class AIchatAPP:
         self.chat_panel.tag_configure("thinking", foreground="#757575", font=("Arial", 10, "italic"))
 
 
-        self.chat_panel.tag_configure("bold", foreground="#F8FAFF", font=("Arial", 10, "bold"))
+        self.chat_panel.tag_configure("bold", foreground="#979AAA", font=("Arial", 10, "bold"))
         self.chat_panel.tag_configure("italic", foreground="#F8FAFF", font=("Arial", 10, "italic"))
         self.chat_panel.tag_configure("underline", underline=True, font=("Arial", 10))
         self.chat_panel.tag_configure("strike", overstrike=True, font=("Arial", 10))
@@ -228,16 +231,30 @@ class AIchatAPP:
                     self.chat_panel.insert(END, f"\n\n{text["content"]}\n\n", "user")
                 elif text["role"] == "assistant":
 
-                    for word in text["content"].replace("<think>", " <think> ").replace("</think>", " </think> ").split(" "):
-
+                    for word in text["content"].replace("<think>", " <think> ").replace("</think>", " </think> ").replace("**", " ** ").replace("__", " __ ").split(" "):
                         if word == "<think>":
                             self.thinking_text = True
                             self.chat_panel.insert(END, f"-------------------------------------",
-                                                   "thinking" if self.thinking_text else "system")
+                                                   "thinking")
                         elif word == "</think>":
                             self.thinking_text = False
                             self.chat_panel.insert(END, f"-------------------------------------",
-                                                   "thinking" if self.thinking_text else "system")
+                                                   "thinking")
+
+                        elif (word == "**" or word=="__") and not self.thinking_text:
+                            if self.bold_text_id is None:
+                                self.bold_text_id = self.chat_panel.index("end-1c")
+                            else:
+                                self.chat_panel.tag_add("bold", self.bold_text_id, self.chat_panel.index("end-1c"))
+                                self.bold_text_id = None
+
+                        elif (word.startswith("*") and word.endswith("*")) and not self.thinking_text:
+                            if self.italic_text_id is None:
+                                self.italic_text_id = self.chat_panel.index("end-1c")
+                            else:
+                                self.chat_panel.tag_add("italic", self.italic_text_id, self.chat_panel.index("end-1c"))
+                                self.italic_text_id = None
+
                         else:
                             self.chat_panel.insert(END, f"{word} ", "thinking" if self.thinking_text else "ai")
 
@@ -256,6 +273,7 @@ class AIchatAPP:
 
 
         thinking_line = self.chat_panel.index(END)
+
         self.chat_panel.insert(END, "\nThinking...\n", "thinking")
         self.chat_panel.see(END)
         self.chat_panel.update()
@@ -292,18 +310,37 @@ class AIchatAPP:
 
         self.chat_panel["state"] = "normal"
 
+
+
         if chunk == "<think>":
             self.thinking_text = True
-            self.chat_panel.insert(END, f"-------------------------------------",
-                                   "thinking" if self.thinking_text else "system")
+            self.chat_panel.insert(END, f"\n-------------------------------------",
+                                   "thinking")
         elif chunk == '</think>':
             self.thinking_text = False
             self.chat_panel.insert(END, f"-------------------------------------",
-                                   "thinking" if self.thinking_text else "system")
+                                   "thinking")
+        elif ("**" in chunk or "__" in chunk) and not self.thinking_text:
+            self.chat_panel.insert(END, chunk.replace("_","*").split("**")[0], "ai")
+
+            if self.bold_text_id is None:
+                self.bold_text_id = self.chat_panel.index("end-1c")
+            else:
+                self.chat_panel.tag_add("bold", self.bold_text_id, self.chat_panel.index("end-1c"))
+                self.bold_text_id = None
+
+        elif ("*" in chunk or "_" in chunk) and not self.thinking_text:
+            self.chat_panel.insert(END, chunk.replace("_","*").split("*")[0], "ai")
+
+            if self.bold_text_id is None:
+                self.bold_text_id = self.chat_panel.index("end-1c")
+            else:
+                self.chat_panel.tag_add("italic", self.bold_text_id, self.chat_panel.index("end-1c"))
+                self.bold_text_id = None
+
+
 
         else:
-
-
             if not self.current_stream_content:
                 self.chat_panel.delete(thinking_line, f"{thinking_line}+2l")
 
@@ -334,6 +371,7 @@ class AIchatAPP:
             self.chat_panel.insert(END, "\n", "ai")
 
         self.chat_panel["state"] = "disabled"
+        self.bold_text = False
 
 
         if not is_error and self.current_stream_content:
