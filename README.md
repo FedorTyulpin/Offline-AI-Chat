@@ -1,19 +1,4 @@
-<<<<<<< HEAD
-# Offline-AI-Chat (New version on `master` branch!!!)
-Simple chat with artificial intelligence, with the ability to create different chats
 
-
-
-
-![alt text](<Без имени.png>)
-1. chat button
-2. delete chat
-3. rename xhat
-4. chat field
-5. input field
-6. send button
-
-=======
 # Offline-AI-Chat
 Simple chat with artificial intelligence, with the ability to create different chats
 
