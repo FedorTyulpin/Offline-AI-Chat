@@ -33,6 +33,13 @@ class AIchatAPP:
         self.thinking_text = False
         self.bold_text_id = None
         self.italic_text_id = None
+        self.quote_text_id = None
+
+        self.header_text = None
+
+        self.code_text_id = None
+        self.first_line_of_code = False
+
 
         self.main_panel()
         self.side_panel()
@@ -148,9 +155,12 @@ class AIchatAPP:
         self.main_panel()
         self.side_panel()
         self.panel.configure(text=chat_label)
+        self.chat_panel.see(END)
 
 
     def main_panel(self):
+
+
 
         self.panel = LabelFrame(root, background="#292A2D",fg="#FFFFFF",labelanchor="n",borderwidth=0,font=("Arial", 11))
         self.panel.grid(row=0, column=1)
@@ -165,24 +175,11 @@ class AIchatAPP:
             bg="#292A2D",
             fg="#FFFFFF",
             borderwidth=0)
+
+        self.chat_panel.bind("<Control-c>", lambda e: self.chat_panel.event_generate("<<Copy>>"))
+
+
         self.chat_panel.grid(row=0,column=0,columnspan=2)
-
-        self.chat_panel.tag_configure("user", foreground="#F8FAFF", justify="right",font=("Arial", 10))
-        self.chat_panel.tag_configure("ai", foreground="#F8FAFF", justify="left",font=("Arial", 10))
-        self.chat_panel.tag_configure("system", foreground="#9e9e9e", justify="center")
-        self.chat_panel.tag_configure("thinking", foreground="#757575", font=("Arial", 10, "italic"))
-
-
-        self.chat_panel.tag_configure("bold", foreground="#979AAA", font=("Arial", 10, "bold"))
-        self.chat_panel.tag_configure("italic", foreground="#F8FAFF", font=("Arial", 10, "italic"))
-        self.chat_panel.tag_configure("underline", underline=True, font=("Arial", 10))
-        self.chat_panel.tag_configure("strike", overstrike=True, font=("Arial", 10))
-
-
-        self.chat_panel.tag_configure("H1", overstrike=True, font=("Arial", 15, "bold"))
-        self.chat_panel.tag_configure("H2", overstrike=True, font=("Arial", 12, "bold"))
-        self.chat_panel.tag_configure("H3", overstrike=True, font=("Arial", 11, "bold"))
-
 
 
         self.is_thinking_flag = ttk.Checkbutton(self.panel,
@@ -206,6 +203,11 @@ class AIchatAPP:
             fg="#FFFFFF",
             borderwidth=0
             )
+
+        self.user_entry.bind("<Control-c>", lambda e: self.user_entry.event_generate("<<Copy>>"))
+        self.user_entry.bind("<Command-v>", lambda e: self.user_entry.event_generate("<<Paste>>"))
+        self.user_entry.bind("<Control-x>", lambda e: self.user_entry.event_generate("<<Cut>>"))
+
         self.user_entry.grid(row=2,column=0, ipadx=5, ipady=5, padx=5,pady=5)
 
 
@@ -223,6 +225,27 @@ class AIchatAPP:
                                                                                       ).strip()))
         self.send_btn.grid(row=2,column=1,ipadx=3, ipady=3)
 
+        self.chat_panel.tag_configure("user", foreground="#F8FAFF", justify="right", font=("Arial", 10))
+        self.chat_panel.tag_configure("ai", foreground="#F8FAFF", justify="left", font=("Arial", 10))
+        self.chat_panel.tag_configure("system", foreground="#9e9e9e", justify="center")
+        self.chat_panel.tag_configure("thinking", foreground="#757575", font=("Arial", 10, "italic"))
+
+        self.chat_panel.tag_configure("bold", foreground="#979AAA", font=("Arial", 10, "bold"))
+        self.chat_panel.tag_configure("italic", foreground="#F8FAFF", font=("Arial", 10, "italic"))
+        self.chat_panel.tag_configure("underline", underline=True, font=("Arial", 10))
+        self.chat_panel.tag_configure("strike", overstrike=True, font=("Arial", 10))
+
+        self.chat_panel.tag_configure("code", background="#212327", font=("Courier", 10), borderwidth=0, relief="solid")
+        self.chat_panel.tag_configure("codetitle", background="#404045", font=("Courier", 10), borderwidth=0, relief="solid")
+        self.chat_panel.tag_configure("quote", foreground="#F8FAF3",background="#424242",font=("Arial", 10, "bold"))
+        self.chat_panel.tag_configure("link", foreground="blue", underline=True)
+
+
+        self.chat_panel.tag_configure("H1",foreground="#F8FAFF", font=("Arial", 15, "bold"))
+        self.chat_panel.tag_configure("H2",foreground="#F8FAFF", font=("Arial", 14, "bold"))
+        self.chat_panel.tag_configure("H3",foreground="#F8FAFF", font=("Arial", 12, "bold"))
+
+
 
         if self.chosen_chat is not None:
             for text in metaGenerator.load(self.chosen_chat):
@@ -231,7 +254,15 @@ class AIchatAPP:
                     self.chat_panel.insert(END, f"\n\n{text["content"]}\n\n", "user")
                 elif text["role"] == "assistant":
 
-                    for word in text["content"].replace("<think>", " <think> ").replace("</think>", " </think> ").replace("**", " ** ").replace("__", " __ ").split(" "):
+                    text["content"] = text["content"].replace("```", "©")
+
+                    for rep in ["<think>","</think>","**","__", "`","©"]:
+                        text["content"] = text["content"].replace(rep, f" {rep} ")
+
+
+                    for word in text["content"].split(" "):
+
+
                         if word == "<think>":
                             self.thinking_text = True
                             self.chat_panel.insert(END, f"-------------------------------------",
@@ -241,22 +272,71 @@ class AIchatAPP:
                             self.chat_panel.insert(END, f"-------------------------------------",
                                                    "thinking")
 
-                        elif (word == "**" or word=="__") and not self.thinking_text:
-                            if self.bold_text_id is None:
-                                self.bold_text_id = self.chat_panel.index("end-1c")
-                            else:
-                                self.chat_panel.tag_add("bold", self.bold_text_id, self.chat_panel.index("end-1c"))
-                                self.bold_text_id = None
 
-                        elif (word.startswith("*") and word.endswith("*")) and not self.thinking_text:
-                            if self.italic_text_id is None:
-                                self.italic_text_id = self.chat_panel.index("end-1c")
-                            else:
-                                self.chat_panel.tag_add("italic", self.italic_text_id, self.chat_panel.index("end-1c"))
-                                self.italic_text_id = None
+                        elif "\n" in word and self.header_text is not None:
+                            self.chat_panel.tag_add(f"H{self.header_text[1]}", self.header_text[0], self.chat_panel.index("end-1c"))
+                            self.chat_panel.insert(END, f"\n{word} ", "ai")
+                            self.header_text = None
 
+                        elif word == "©" and not self.thinking_text:
+                            if self.code_text_id is None:
+                                self.first_line_of_code = True
+                            else:
+                                self.chat_panel.tag_add("code",str(float(self.code_text_id)-0.1), str(float(self.chat_panel.index("end"))-1))
+                                self.code_text_id = None
+
+                        elif self.first_line_of_code:
+                            self.chat_panel.insert(END, f"{word} ")
+                            self.chat_panel.tag_add("codetitle",
+                                                    str(float(self.chat_panel.index("end"))-2), str(float(self.chat_panel.index("end"))-1))
+                            self.code_text_id = self.chat_panel.index("end-1c")
+                            self.first_line_of_code = False
+
+                        elif word=="`" and (not self.thinking_text or self.code_text_id is not None ):
+                            if self.quote_text_id is None:
+                                self.quote_text_id = self.chat_panel.index("end-1c")
+                            else:
+                                self.chat_panel.tag_add("quote", self.quote_text_id, self.chat_panel.index("end-2c"))
+                                self.quote_text_id = None
+
+                        elif self.quote_text_id is None and self.code_text_id is None:
+
+                            if "#" in word and not self.thinking_text:
+                                if "###" in word:
+                                    word = "".join(word.split("#"))
+                                    self.chat_panel.insert(END, f"{word} \n", "ai")
+                                    self.header_text = (self.chat_panel.index("end-1c"), 1)
+
+                                elif "##" in word:
+                                    word = "".join(word.split("##"))
+                                    self.chat_panel.insert(END, f"{word} \n", "ai")
+                                    self.header_text = (self.chat_panel.index("end-1c"), 2)
+
+                                else:
+                                    word = "".join(word.split("###"))
+                                    self.chat_panel.insert(END, f"{word} \n", "ai")
+                                    self.header_text = (self.chat_panel.index("end-1c"), 3)
+
+                            elif (word == "**" or word=="__") and not self.thinking_text:
+                                if self.bold_text_id is None:
+                                    self.bold_text_id = self.chat_panel.index("end-1c")
+                                else:
+                                    self.chat_panel.tag_add("bold", self.bold_text_id, self.chat_panel.index("end-1c"))
+                                    self.bold_text_id = None
+
+                            elif (word.startswith("*") and word.endswith("*")) and not self.thinking_text:
+                                if self.italic_text_id is None:
+                                    self.italic_text_id = self.chat_panel.index("end-1c")
+                                else:
+                                    self.chat_panel.tag_add("italic", self.italic_text_id, self.chat_panel.index("end-1c"))
+                                    self.italic_text_id = None
+
+                            else:
+                                self.chat_panel.insert(END, f"{word} ", "thinking" if self.thinking_text else "ai")
                         else:
                             self.chat_panel.insert(END, f"{word} ", "thinking" if self.thinking_text else "ai")
+
+            self.chat_panel["state"] = "disable"
 
     def send_message(self, text):
         if self.streaming_active:
@@ -320,24 +400,6 @@ class AIchatAPP:
             self.thinking_text = False
             self.chat_panel.insert(END, f"-------------------------------------",
                                    "thinking")
-        elif ("**" in chunk or "__" in chunk) and not self.thinking_text:
-            self.chat_panel.insert(END, chunk.replace("_","*").split("**")[0], "ai")
-
-            if self.bold_text_id is None:
-                self.bold_text_id = self.chat_panel.index("end-1c")
-            else:
-                self.chat_panel.tag_add("bold", self.bold_text_id, self.chat_panel.index("end-1c"))
-                self.bold_text_id = None
-
-        elif ("*" in chunk or "_" in chunk) and not self.thinking_text:
-            self.chat_panel.insert(END, chunk.replace("_","*").split("*")[0], "ai")
-
-            if self.bold_text_id is None:
-                self.bold_text_id = self.chat_panel.index("end-1c")
-            else:
-                self.chat_panel.tag_add("italic", self.bold_text_id, self.chat_panel.index("end-1c"))
-                self.bold_text_id = None
-
 
 
         else:
@@ -370,18 +432,18 @@ class AIchatAPP:
 
             self.chat_panel.insert(END, "\n", "ai")
 
-        self.chat_panel["state"] = "disabled"
-        self.bold_text = False
-
-
         if not is_error and self.current_stream_content:
             metaGenerator.save(self.chosen_chat, self.chats[self.chosen_chat].history)
 
-
+        self.chat_panel["state"] = "disabled"
         self.user_entry["state"] = "normal"
         self.send_btn["state"] = "normal"
         self.streaming_active = False
         self.current_stream_content = ""
+
+
+        self.panel.destroy()
+        self.main_panel()
 
 
 if __name__ == "__main__":
