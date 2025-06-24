@@ -8,8 +8,6 @@ from tkinter import ttk
 from tkinter import scrolledtext, messagebox, simpledialog
 from tkinter.messagebox import askyesno
 
-
-
 import AI
 import metaGenerator
 
@@ -205,7 +203,7 @@ class AIchatAPP:
             )
 
         self.user_entry.bind("<Control-c>", lambda e: self.user_entry.event_generate("<<Copy>>"))
-        self.user_entry.bind("<Command-v>", lambda e: self.user_entry.event_generate("<<Paste>>"))
+        self.user_entry.bind("<Control-v>", lambda e: self.user_entry.event_generate("<<Paste>>"))
         self.user_entry.bind("<Control-x>", lambda e: self.user_entry.event_generate("<<Cut>>"))
 
         self.user_entry.grid(row=2,column=0, ipadx=5, ipady=5, padx=5,pady=5)
@@ -273,23 +271,21 @@ class AIchatAPP:
                                                    "thinking")
 
 
-                        elif "\n" in word and self.header_text is not None:
-                            self.chat_panel.tag_add(f"H{self.header_text[1]}", self.header_text[0], self.chat_panel.index("end-1c"))
-                            self.chat_panel.insert(END, f"\n{word} ", "ai")
-                            self.header_text = None
+
 
                         elif word == "©" and not self.thinking_text:
                             if self.code_text_id is None:
                                 self.first_line_of_code = True
                             else:
-                                self.chat_panel.tag_add("code",str(float(self.code_text_id)-0.1), str(float(self.chat_panel.index("end"))-1))
+                                self.chat_panel.tag_add("code",str(float(self.code_text_id)), str(float(self.chat_panel.index("end"))-1))
                                 self.code_text_id = None
+
 
                         elif self.first_line_of_code:
                             self.chat_panel.insert(END, f"{word} ")
                             self.chat_panel.tag_add("codetitle",
                                                     str(float(self.chat_panel.index("end"))-2), str(float(self.chat_panel.index("end"))-1))
-                            self.code_text_id = self.chat_panel.index("end-1c")
+                            self.code_text_id = self.chat_panel.index(str(float(self.chat_panel.index("end"))-1))
                             self.first_line_of_code = False
 
                         elif word=="`" and (not self.thinking_text or self.code_text_id is not None ):
@@ -316,6 +312,13 @@ class AIchatAPP:
                                     word = "".join(word.split("###"))
                                     self.chat_panel.insert(END, f"{word} \n", "ai")
                                     self.header_text = (self.chat_panel.index("end-1c"), 3)
+
+                            elif "\n" in word and self.header_text is not None:
+                                self.chat_panel.tag_add(f"H{self.header_text[1]}", self.header_text[0],
+                                                        self.chat_panel.index("end-1c"))
+                                self.chat_panel.insert(END, f"\n{word} ", "ai")
+                                self.header_text = None
+
 
                             elif (word == "**" or word=="__") and not self.thinking_text:
                                 if self.bold_text_id is None:
@@ -376,7 +379,7 @@ class AIchatAPP:
             self.chats[self.chosen_chat].stream_query(
                 text,
                 lambda chunk: self.root.after(0, self.update_stream, chunk, thinking_line),
-                is_thinking=self.is_thinking.get())
+                    is_thinking=self.is_thinking.get())
         except Exception as e:
             error_msg = f"⚠️ Error: {str(e)}"
             self.root.after(0, self.finalize_stream, error_msg, True, thinking_line)

@@ -39,6 +39,7 @@ if not [x for x in open("meta/model.txt")]:
     modelTxt.close()
 
 default_model = [x for x in open("meta/model.txt")][0]
+print(default_model, downloaded_modules)
 
 
 
@@ -64,8 +65,8 @@ class AI_chat():
             model=self.model,
             messages=self.history,
             think=None if is_thinking else False,
-            stream=True  # Включаем потоковый вывод
-
+            stream=True,  # Включаем потоковый вывод
+            keep_alive= True
         )
 
         full_response = ""
