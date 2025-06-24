@@ -1,5 +1,6 @@
 
-def save(chat_label, history):
+def save(chat_label: str, history: list[dict]):
+    """Saving chat history"""
     file  = open(f"meta/chats/{chat_label}.txt", "w+", encoding="UTF-8")
     for mess in history:
         file.write(f"{mess}\n")
@@ -7,13 +8,10 @@ def save(chat_label, history):
 
 
 def load(chat_label):
+    """Loading chat history"""
     file  = open(f"meta/chats/{chat_label}.txt", "r+", encoding="UTF-8")
-    history = []
-
-    for line in file:
-        history.append(eval(line))
+    history = [eval(line) for line in file]
     file.close()
-
     return history
 
 if __name__ == "__main__":
