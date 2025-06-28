@@ -8,10 +8,7 @@ def save(chat_label, history):
 
 def load(chat_label):
     file  = open(f"meta/chats/{chat_label}.txt", "r+", encoding="UTF-8")
-    history = []
-
-    for line in file:
-        history.append(eval(line))
+    history = [eval(line) for line in file]
     file.close()
 
     return history

@@ -8,19 +8,21 @@ from tkinter import ttk
 from tkinter import scrolledtext, messagebox, simpledialog
 from tkinter.messagebox import askyesno
 
-import AI
+
+from AI import AI_chat
 import metaGenerator
+
 
 
 class AIchatAPP:
 
-    def __init__(self, root:tk.Tk):
+    def __init__(self, root:tk.Tk) -> None:
 
         self.chats = {}
-        self.chosen_chat = None
+        self.chosen_chat: str | None = None
 
-        self.streaming_active = False
-        self.current_stream_content = ""
+        self.streaming_active: bool = False
+        self.current_stream_content: str = ""
 
         self.chat_panel = tk.scrolledtext.ScrolledText()
         self.root = root
@@ -42,25 +44,27 @@ class AIchatAPP:
         self.main_panel()
         self.side_panel()
 
-    def side_panel(self):
+    def side_panel(self) -> None:
+        """Generation of chat panel"""
 
         self.side = LabelFrame(self.root,text="Chats",background="#212327",fg="#FFFAFA",borderwidth=0)
         self.side.grid(row=0, column=0,ipadx=5, ipady=5,sticky="nsew")
 
-        new_chat_btn = Button(self.side,
-                              text="+ new chat",
-                              width=15,
-                              background="#4D6BFE",
-                              fg="#F8FAFC",
-                              command=lambda : self.create_chat())
-        new_chat_btn.grid(columnspan=3,sticky="n",padx=5,pady=5)
+        Button(
+            self.side,
+            text="+ new chat",
+            width=15,
+            background="#4D6BFE",
+            fg="#F8FAFC",
+            command=lambda : self.create_chat()
+        ).grid(columnspan=3,sticky="n",padx=5,pady=5)
 
-        chats_list = [i[:-4] for i in os.listdir("meta/chats")]
+        chats_list: list[str] = [i[:-4] for i in os.listdir("meta/chats")]
 
         for chat_id in range(len(chats_list)):
             current_chat = chats_list[chat_id]
 
-            self.chats[current_chat] = AI.AI_chat(current_chat, history= metaGenerator.load(current_chat))
+            self.chats[current_chat] = AI_chat(current_chat, history= metaGenerator.load(current_chat))
 
             Button(
                 self.side,
@@ -96,7 +100,8 @@ class AIchatAPP:
             ).grid(row=chat_id + 1, column=2, ipadx=3)
 
 
-    def create_chat(self):
+    def create_chat(self) -> None:
+        """The process of generating a new chat"""
         new_chat_name = simpledialog.askstring("New chat", "Enter the chat name:", parent=self.root)
 
         if not new_chat_name:
@@ -112,7 +117,8 @@ class AIchatAPP:
             self.open_chat(new_chat_name)
 
 
-    def rename_chat(self, chat_label:str,new_chat_name= None):
+    def rename_chat(self, chat_label: str, new_chat_name: str | None = None) -> None:
+        """The process of renaming a chat"""
         if new_chat_name is None:
             new_chat_name = simpledialog.askstring(f"Rename chat {chat_label}", "Enter the chat name:", parent=self.root)
 
@@ -129,23 +135,22 @@ class AIchatAPP:
             self.side_panel()
 
 
-    def delete_chat(self,chat_label:str):
+    def delete_chat(self, chat_label: str) -> None:
+        """The process of deleting a chat"""
         if askyesno("Confirmation", message=f"are you sure you want to delete '{chat_label}'?"):
             self.chats.pop(chat_label)
             os.remove(f"meta/chats/{chat_label}.txt")
-
 
             self.side.destroy()
             self.side_panel()
             self.open_chat(None)
 
-
-
         else:
             return
 
 
-    def open_chat(self, chat_label:str):
+    def open_chat(self, chat_label: str | None) -> None:
+        """The process of opening a chat"""
         self.chosen_chat = chat_label
 
         self.panel.destroy()
@@ -156,10 +161,8 @@ class AIchatAPP:
         self.chat_panel.see(END)
 
 
-    def main_panel(self):
-
-
-
+    def main_panel(self) -> None:
+        """Generation of chat panel"""
         self.panel = LabelFrame(root, background="#292A2D",fg="#FFFFFF",labelanchor="n",borderwidth=0,font=("Arial", 11))
         self.panel.grid(row=0, column=1)
 
@@ -341,7 +344,10 @@ class AIchatAPP:
 
             self.chat_panel["state"] = "disable"
 
-    def send_message(self, text):
+    def send_message(self, text: str) -> None:
+        """Sends a message to the chat"""
+        if not text:
+            return
         if self.streaming_active:
             return
 
@@ -372,8 +378,8 @@ class AIchatAPP:
         )
         thread.start()
 
-    def start_stream_query(self, text, thinking_line):
-        """Запускает потоковый запрос"""
+    def start_stream_query(self, text: str, thinking_line: str) -> None:
+        """Start a threaded query"""
         try:
 
             self.chats[self.chosen_chat].stream_query(
@@ -386,8 +392,8 @@ class AIchatAPP:
         finally:
             self.root.after(0, self.finalize_stream, "", False, thinking_line)
 
-    def update_stream(self, chunk, thinking_line):
-        """Обновляет интерфейс новой частью ответа"""
+    def update_stream(self, chunk: str, thinking_line: str) -> None:
+        """Updates the interface with a new response part"""
         if not self.streaming_active:
             return
 
@@ -420,8 +426,8 @@ class AIchatAPP:
             self.chat_panel.see(END)
             self.chat_panel["state"] = "disabled"
 
-    def finalize_stream(self, error_msg, is_error, thinking_line):
-        """Завершает потоковый вывод"""
+    def finalize_stream(self, error_msg: str, is_error: bool, thinking_line: str) -> None:
+        """Ends streaming output"""
         self.chat_panel["state"] = "normal"
 
         if is_error:
